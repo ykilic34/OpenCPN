@@ -107,7 +107,9 @@ class TrafficSimulation:
                 lead = self.cars[i - 1]
                 target_position = lead.position - (self.car_length + self.gap)
                 max_step = max(0.0, (target_position - car.position) / dt)
-                car.velocity = min(self.car_speed if phase == "green" else 0.0, max_step)
+                # Followers can inch forward even on red, but never exceed the
+                # spacing to the vehicle ahead and obey the cruise speed limit.
+                car.velocity = min(self.car_speed, max_step)
 
             car.position += car.velocity * dt
 
@@ -188,6 +190,8 @@ class Visualizer:
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--arrival-rate", type=float, default=0.35, help="Cars per second (lambda)")
+    parser.add_argument("--car-length", type=float, default=4.5, help="Vehicle length in meters")
+    parser.add_argument("--gap", type=float, default=2.5, help="Desired bumper gap in meters")
     parser.add_argument("--green", type=float, default=12.0, help="Green time in seconds")
     parser.add_argument("--yellow", type=float, default=3.0, help="Yellow time in seconds")
     parser.add_argument("--red", type=float, default=8.0, help="Red time in seconds")
@@ -203,6 +207,8 @@ def main() -> None:
     cycle = LightCycle(green=args.green, yellow=args.yellow, red=args.red)
     sim = TrafficSimulation(
         arrival_rate=args.arrival_rate,
+        car_length=args.car_length,
+        gap=args.gap,
         car_speed=args.speed,
         cycle=cycle,
         seed=args.seed,
